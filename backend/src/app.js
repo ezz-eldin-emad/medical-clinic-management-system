@@ -39,7 +39,7 @@ app.use(express.static(path.join(__dirname, '../../frontend/dist')));
 // Handle React routing for non-API routes
 
 app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '../../frontend/dist', 'index.html'));
 });
 
 
