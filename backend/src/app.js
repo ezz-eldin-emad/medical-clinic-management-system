@@ -34,7 +34,7 @@ app.get('/test', (req, res) => {
 const path = require('path');
 
 // Serve React build files
-app.use(express.static(path.join(__dirname, '../dist')));
+app.use(express.static(path.join(__dirname, '../../frontend/dist')));
 
 // Handle React routing for non-API routes
 

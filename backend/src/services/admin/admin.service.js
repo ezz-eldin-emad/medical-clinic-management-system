@@ -836,9 +836,14 @@ class AdminService {
 
     // ✅ Transform to flat, frontend-friendly structure
     const formatted = appointments.map(appt => {
-      // Convert time objects to strings
-      const startTime = appt.schedule.startTime ? String(appt.schedule.startTime).slice(0, 5) : '00:00';
-      const endTime = appt.schedule.endTime ? String(appt.schedule.endTime).slice(0, 5) : '00:00';
+      // Convert time objects to strings (Prisma returns TIME fields as Date)
+      const toTimeString = (value) => {
+        if (!value) return '00:00';
+        if (value instanceof Date) return value.toISOString().slice(11, 16);
+        return String(value).slice(0, 5);
+      };
+      const startTime = toTimeString(appt.schedule.startTime);
+      const endTime = toTimeString(appt.schedule.endTime);
       
       return {
         id: appt.id,
