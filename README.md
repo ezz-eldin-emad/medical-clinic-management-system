@@ -1,29 +1,52 @@
 # Medical Clinic Management System
 
-A full-stack clinic management platform for booking, tracking and administering
-medical appointments. It ships with four role-based workspaces — **Admin**,
-**Doctor**, **Receptionist** and **Patient** — backed by an Express + Prisma API
-and a React single-page application.
+**A full-stack clinic operations platform for booking, managing and tracking medical appointments.**
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Open%20App-3B82F6?style=for-the-badge)](https://medical-clinic-management-system-livid.vercel.app)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Express](https://img.shields.io/badge/Express-5-000000?logo=express&logoColor=white)](https://expressjs.com)
+[![Prisma](https://img.shields.io/badge/Prisma-6-2D3748?logo=prisma&logoColor=white)](https://www.prisma.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?logo=vercel&logoColor=white)](https://vercel.com)
 
 ![Admin dashboard](docs/screenshots/02-admin-dashboard.png)
 
 ## Overview
 
-The system covers the day-to-day flow of a small clinic: patients browse
+The system covers the day-to-day flow of a small clinic. Patients browse
 specialties and available slots, book or cancel appointments, and review their
-medical history; doctors see today's queue and their weekly schedule and write
-medical records; receptionists book on behalf of patients; and admins manage
+medical history. Doctors see today's queue and their weekly schedule and write
+medical records. Receptionists book on behalf of patients, and admins manage
 doctors, patients, receptionists, rooms, specialties, schedules and reports from
-one dashboard.
+a single dashboard.
 
 Authentication is JWT-based, passwords are hashed with bcrypt, and new patient
 accounts are verified by a six-digit OTP sent over email. Appointment booking is
-capacity-aware and doctor schedules cannot overlap on the same weekday.
+capacity-aware, and a doctor cannot have overlapping schedules on the same
+weekday.
+
+The live demo is seeded with **16 doctors, 60 patients, 38 weekly schedules and
+over 500 appointments**. The login page includes click-to-fill demo accounts for
+each role.
+
+## Table of contents
+
+- [Features](#features)
+- [Tech stack](#tech-stack)
+- [Architecture](#architecture)
+- [Screenshots](#screenshots)
+- [Database design](#database-design)
+- [Getting started](#getting-started)
+- [Demo accounts](#demo-accounts)
+- [API](#api)
+- [Deployment](#deployment)
+- [Project structure](#project-structure)
+- [License](#license)
 
 ## Features
 
 ### Admin
-- Dashboard with live totals for patients, doctors, appointments and specialties
+- Live dashboard totals for patients, doctors, appointments and specialties
 - Full CRUD for doctors, patients, receptionists, rooms and specialties
 - Weekly doctor schedules with room assignment and capacity limits
 - Appointment overview with status, doctor, schedule and room
@@ -53,11 +76,27 @@ capacity-aware and doctor schedules cannot overlap on the same weekday.
 | Backend | Node.js, Express 5, JWT, bcrypt, Nodemailer |
 | Database | PostgreSQL, Prisma ORM 6 |
 | Reporting | Custom aggregation endpoints |
-| Tooling | Prisma Migrate, Graphviz (ERD) |
+| Tooling | Prisma Migrate, Graphviz (ERD), Playwright (screenshots) |
+| Hosting | Vercel Services (static frontend + Express function), Neon Postgres |
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Browser["React SPA<br/>Vite"] -->|"/api/*"| API["Express API<br/>Vercel Function"]
+  API --> ORM["Prisma ORM"]
+  ORM --> DB[("PostgreSQL<br/>Neon")]
+```
+
+The frontend and backend deploy together as one Vercel project using
+[Vercel Services](https://vercel.com/docs/services): `frontend/` is served as a
+static Vite app, while `backend/` runs as a serverless Express service. Both
+services share the same domain, so the browser calls `/api/*` with no CORS or
+hard-coded host.
 
 ## Screenshots
 
-| Login | Doctor dashboard |
+| Login — click-to-fill demo accounts | Doctor dashboard |
 | --- | --- |
 | ![Login](docs/screenshots/01-login.png) | ![Doctor dashboard](docs/screenshots/08-doctor-dashboard.png) |
 
@@ -65,9 +104,10 @@ capacity-aware and doctor schedules cannot overlap on the same weekday.
 | --- | --- |
 | ![Manage appointments](docs/screenshots/04-manage-appointments.png) | ![Book appointment](docs/screenshots/10-book-appointment.png) |
 
-The full gallery — admin CRUD screens, reports, schedules, patient view and the
+The full gallery — admin CRUD screens, schedules, patients, reports and the
 database ERD — lives in [`docs/README.md`](docs/README.md). A ready-to-upload
-thumbnail is available at [`docs/screenshots/thumbnail.jpg`](docs/screenshots/thumbnail.jpg).
+thumbnail is available at
+[`docs/screenshots/thumbnail.jpg`](docs/screenshots/thumbnail.jpg).
 
 ## Database design
 
@@ -81,32 +121,6 @@ The source diagram is [`docs/erd.dot`](docs/erd.dot); regenerate the PNG with:
 
 ```bash
 dot -Tpng -Gdpi=150 docs/erd.dot -o docs/screenshots/11-erd.png
-```
-
-## Project structure
-
-```
-medical-clinic-management-system/
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma        # Data model
-│   │   ├── migrations/          # Versioned SQL migrations
-│   │   └── seed.js              # Demo data
-│   └── src/
-│       ├── config/              # Constants, Prisma client, email
-│       ├── controllers/         # HTTP layer
-│       ├── services/            # Business logic and queries
-│       ├── routes/              # Express routers
-│       ├── middlewares/         # Auth and error handling
-│       └── app.js               # Express app (also exported for serverless)
-├── frontend/
-│   └── src/
-│       ├── api/                 # Axios clients per role
-│       ├── components/          # Reusable UI (tables, modals, cards)
-│       ├── layouts/             # Auth and dashboard shells
-│       ├── pages/               # Route-level screens
-│       └── styles.css           # Design system
-└── docs/                        # API reference, screenshots, ERD, guide
 ```
 
 ## Getting started
@@ -140,9 +154,20 @@ npm run dev
 
 The app runs on `http://localhost:5175`.
 
-### Demo accounts
+### Environment variables
 
-The seed script creates one account per role plus eight doctors and ten patients:
+| Variable | Required | Description |
+| --- | --- | --- |
+| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `JWT_SECRET` | Yes | Signing secret for access tokens |
+| `EMAIL_USER` | No | Gmail address for OTP emails |
+| `EMAIL_PASSWORD` | No | Gmail app password for OTP emails |
+| `VITE_API_BASE_URL` | No | API base URL (defaults to `/api` in production) |
+
+## Demo accounts
+
+The seed script creates one account per role. On the login page, click any row
+in **Demo accounts** to fill the form automatically.
 
 | Role | Email | Password |
 | --- | --- | --- |
@@ -163,30 +188,51 @@ Base URL: `http://localhost:3000/api`
 
 See [`docs/API.md`](docs/API.md) for the full endpoint reference.
 
-## Deployment (Vercel)
+## Deployment
 
-The repository is prepared for a single Vercel project:
+The repository is configured for **Vercel Services**:
 
-- `vercel.json` builds `frontend/` as a static site and routes `/api/*` to the
-  Express app through `api/index.js`.
-- Prisma Client is generated at build time; run migrations once against the
-  hosted database. Set `DATABASE_URL` and `JWT_SECRET` in the Vercel project
-  environment.
+- `frontend/` — static Vite build, exposed at `/`
+- `backend/` — Express app, exposed at `/api/*` through `backend/index.js`
+- `vercel.json` defines both services and the public rewrites.
 
 ```bash
 npx vercel --prod
 ```
 
-Use a hosted PostgreSQL instance (Neon, Supabase or Vercel Postgres) and run
+Set `DATABASE_URL` and `JWT_SECRET` in the Vercel project. Use a hosted
+PostgreSQL instance (Neon, Supabase or Vercel Postgres) and run
 `npx prisma migrate deploy` once against it. Email OTP verification additionally
-needs `EMAIL_USER` and `EMAIL_PASSWORD` (Gmail app password); login and the demo
-screens work without it.
+needs `EMAIL_USER` and `EMAIL_PASSWORD`; login and the demo screens work without
+them.
 
-## Documentation
+## Project structure
 
-- [API reference](docs/API.md)
-- [Screenshots and ERD](docs/README.md)
-- [Team collaboration guide](docs/team-collaboration-guide.pdf)
+```
+medical-clinic-management-system/
+├── backend/
+│   ├── index.js                 # Serverless service entry point
+│   ├── prisma/
+│   │   ├── schema.prisma        # Data model
+│   │   ├── migrations/          # Versioned SQL migrations
+│   │   └── seed.js              # Demo data
+│   └── src/
+│       ├── config/              # Constants, Prisma client, email
+│       ├── controllers/         # HTTP layer
+│       ├── services/            # Business logic and queries
+│       ├── routes/              # Express routers
+│       ├── middlewares/         # Auth and error handling
+│       └── app.js               # Express app
+├── frontend/
+│   └── src/
+│       ├── api/                 # Axios clients per role
+│       ├── components/          # Reusable UI (tables, modals, cards)
+│       ├── layouts/             # Auth and dashboard shells
+│       ├── pages/               # Route-level screens
+│       └── styles.css           # Design system
+├── docs/                        # API reference, screenshots, ERD, guide
+└── vercel.json                  # Frontend + backend services
+```
 
 ## License
 
